@@ -54,8 +54,8 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 	EditHwnd = CreateWindowEx(WS_EX_CLIENTEDGE,"GETNUM",TEXT("请先输入数据:"),WS_VISIBLE,
 		CW_USEDEFAULT, /* x */
 		CW_USEDEFAULT, /* y */
-		200, /* width */
-		200, /* height */
+		400, /* width */
+		400, /* height */
 		NULL,NULL,NULL,NULL);
 		
 	if(EditHwnd == NULL)
@@ -127,24 +127,37 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 
 LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 {
-	static HWND Edit;
+	static HWND EditWidth;
+	static HWND EditHeight;
 	static HWND ButtonOK;
-	static char Num[32];
+	static char Width[32];
+	static char Height[32];
 	switch(Message)
 	{
 		case WM_CREATE:
 		{
-			Edit = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入宽和高"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 2,((LPCREATESTRUCT)lParam)->cy / 2,100,20,hwnd,(HMENU)1,0,0); 
-			ButtonOK = CreateWindowEx(NULL,TEXT("BUTTON"),"OK",WS_CHILD|BS_PUSHBUTTON|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 2,((LPCREATESTRUCT)lParam)->cy / 2 + 50,50,25,hwnd,(HMENU)2,0,0);
+			EditHeight = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入高度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3,100,20,hwnd,(HMENU)0,0,0); 
+			EditWidth = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入宽度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 25,100,20,hwnd,(HMENU)1,0,0); 
+			ButtonOK = CreateWindowEx(NULL,TEXT("BUTTON"),"OK",WS_CHILD|BS_PUSHBUTTON|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 100,50,25,hwnd,(HMENU)2,0,0);
 			break;
 		}
 		
 		case WM_COMMAND:
 		{
+			switch(HIWORD(wParam))
+			{
+				case EN_SETFOCUS:
+				{
+					SendMessage((HWND)lParam,WM_SETTEXT,0,(LPARAM)"");
+					break;
+				}
+			}
 			if(LOWORD(wParam) == 2)
 			{
-				SendMessage(Edit,WM_GETTEXT,32,(LPARAM)Num);
-				DestroyWindow(Edit);
+				SendMessage(EditHeight,WM_GETTEXT,32,(LPARAM)Height);
+				SendMessage(EditWidth,WM_GETTEXT,32,(LPARAM)Width);
+				DestroyWindow(EditHeight);
+				DestroyWindow(EditWidth);
 				DestroyWindow(ButtonOK);
 				DestroyWindow(hwnd);
 			}
@@ -158,7 +171,7 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 		}
 		
 		default:
-			return DefWindowProc(hwnd, Message, wParam, lParam);
+			return DefWindowProc(hwnd,Message,wParam,lParam);
 	}
 	return 0;
 }
