@@ -15,6 +15,8 @@ const int WindowWidth = 500*1.2;
 const int WindowHeight = 500*1.2;
 const char* szAppName = TEXT("Rubiks's cube Wall");
 
+bool IsEnter = false; //玩家是否正常地输入了各类信息. 
+
 LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
 LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
 
@@ -37,34 +39,34 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 	EditClass.cbSize = sizeof(WNDCLASSEX);
 	EditClass.lpfnWndProc = EditWndProc;
 	EditClass.hInstance	 = hInstance;
-	EditClass.hCursor = LoadCursor(NULL,IDC_ARROW);
+	EditClass.hCursor = LoadCursor(0,IDC_ARROW);
 	
 	EditClass.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
 	EditClass.lpszClassName = "GETNUM";
-	EditClass.hIcon	= LoadIcon(NULL,IDI_APPLICATION); /* Load a standard icon */
-	EditClass.hIconSm = LoadIcon(NULL,IDI_APPLICATION); /* use the name "A" to use the project icon */
+	EditClass.hIcon	= LoadIcon(0,IDI_APPLICATION); /* Load a standard icon */
+	EditClass.hIconSm = LoadIcon(0,IDI_APPLICATION); /* use the name "A" to use the project icon */
 	
 	memset(&WndClass,0,sizeof(WndClass));
 	WndClass.style = CS_VREDRAW|CS_HREDRAW;
 	WndClass.cbSize = sizeof(WNDCLASSEX);
 	WndClass.lpfnWndProc = WndProc;
 	WndClass.hInstance = hInstance;
-	WndClass.hCursor = LoadCursor(NULL,IDC_ARROW);
+	WndClass.hCursor = LoadCursor(0,IDC_ARROW);
 	
 	WndClass.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
 	WndClass.lpszClassName = szAppName;
-	WndClass.hIcon = LoadIcon(NULL,IDI_APPLICATION); /* Load a standard icon */
-	WndClass.hIconSm = LoadIcon(NULL,IDI_APPLICATION); /* use the name "A" to use the project icon */
+	WndClass.hIcon = LoadIcon(0,IDI_APPLICATION); /* Load a standard icon */
+	WndClass.hIconSm = LoadIcon(0,IDI_APPLICATION); /* use the name "A" to use the project icon */
 	
 	if(!RegisterClassEx(&EditClass))
 	{
-		MessageBox(NULL,"Window Registration Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
+		MessageBox(0,"Window Registration Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
 		return 0;
 	}
 	
 	if(!RegisterClassEx(&WndClass))
 	{
-		MessageBox(NULL,"Window Registration Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
+		MessageBox(0,"Window Registration Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
 		return 0;
 	}
 	
@@ -73,18 +75,23 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 		CW_USEDEFAULT, /* y */
 		400, /* width */
 		400, /* height */
-		NULL,NULL,NULL,NULL);
+		0,0,0,0);
 		
-	if(EditHwnd == NULL)
+	if(EditHwnd == 0)
 	{
-		MessageBox(NULL,"Window Creation Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
+		MessageBox(0,"Window Creation Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
 		return 0;
 	}
 	
-	while(GetMessage(&msg,NULL,0,0))
+	while(GetMessage(&msg,0,0,0))
 	{
 		TranslateMessage(&msg); /* Translate key codes to chars if present */
 		DispatchMessage(&msg); /* Send it to WndProc */
+	}
+	
+	if(!IsEnter)
+	{
+		return msg.wParam;
 	}
 
 	::Map = new COLORREF*[Width];
@@ -98,18 +105,18 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 		CW_USEDEFAULT, /* y */
 		WindowWidth, /* width */
 		WindowHeight, /* height */
-		NULL,NULL,hInstance,NULL);
+		0,0,hInstance,0);
 		
 	SetWindowLong(hwnd,GWL_WNDPROC,(LONG)WndProc);
 	UpdateWindow(hwnd);
 	
-	if(hwnd == NULL)
+	if(hwnd == 0)
 	{
-		MessageBox(NULL,"Window Creation Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
+		MessageBox(0,"Window Creation Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
 		return 0;
 	}
 
-	while(GetMessage(&msg,NULL,0,0))
+	while(GetMessage(&msg,0,0,0))
 	{
 		TranslateMessage(&msg); /* Translate key codes to chars if present */
 		DispatchMessage(&msg); /* Send it to WndProc */
@@ -237,7 +244,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 			//画出分割线，便于观察. 
 			hPen = CreatePen(PS_SOLID,2,RGB(0,0,0));
 			SelectObject(hdc,hPen);
-			MoveToEx(hdc,Clientx/2,0,NULL);
+			MoveToEx(hdc,Clientx/2,0,0);
 			LineTo(hdc,Clientx/2,Clienty); 
 			EndPaint(hwnd,&ps);
 			break; 
@@ -266,7 +273,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 								Different[i].x = -1;
 								Different[i].y = -1;
 								Count--;
-								InvalidateRect(hwnd,NULL,true);
+								InvalidateRect(hwnd,0,true);
 								return 0;
 							}
 						}
@@ -300,14 +307,23 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 	static char Width[32];
 	static char Height[32];
 	static char DiffNum[32];
+	static HFONT hFont;
+	
 	switch(Message)
 	{
 		case WM_CREATE:
 		{
-			EditDiffNum = EditHeight = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入不同方块数目:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 - 50,125,30,hwnd,(HMENU)-1,0,0);
-			EditHeight = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入高度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3,125,30,hwnd,(HMENU)0,0,0); 
-			EditWidth = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入宽度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 50,125,30,hwnd,(HMENU)1,0,0); 
-			ButtonOK = CreateWindowEx(NULL,TEXT("BUTTON"),"OK",WS_CHILD|BS_PUSHBUTTON|BS_FLAT|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 100,50,25,hwnd,(HMENU)2,0,0);
+			hFont = CreateFont(18,8,0,0,FW_THIN,false,false,false,GB2312_CHARSET,OUT_CHARACTER_PRECIS,
+            CLIP_CHARACTER_PRECIS,DEFAULT_QUALITY,FF_MODERN,TEXT("宋体"));
+            
+			EditDiffNum = EditHeight = CreateWindowEx(0,TEXT("EDIT"),TEXT("请输入不同方块数目:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 - 50,180,30,hwnd,(HMENU)-1,0,0);
+			EditHeight = CreateWindowEx(0,TEXT("EDIT"),TEXT("请输入高度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3,150,30,hwnd,(HMENU)0,0,0); 
+			EditWidth = CreateWindowEx(0,TEXT("EDIT"),TEXT("请输入宽度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 50,150,30,hwnd,(HMENU)1,0,0); 
+			ButtonOK = CreateWindowEx(0,TEXT("BUTTON"),"OK",WS_CHILD|BS_PUSHBUTTON|BS_FLAT|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 100,50,25,hwnd,(HMENU)2,0,0);
+			SendMessage(EditDiffNum,WM_SETFONT,(WPARAM)hFont,0);
+			SendMessage(EditHeight,WM_SETFONT,(WPARAM)hFont,0);
+			SendMessage(EditWidth,WM_SETFONT,(WPARAM)hFont,0);
+			SendMessage(ButtonOK,WM_SETFONT,(WPARAM)hFont,0);
 			break;
 		}
 		
@@ -346,9 +362,10 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 					MessageBox(hwnd,TEXT("输入有误，请重新输入:"),TEXT("提示:"),MB_OK);
 					SendMessage(EditHeight,WM_SETTEXT,0,(LPARAM)("请重新输入高度:"));
 					SendMessage(EditWidth,WM_SETTEXT,0,(LPARAM)("请重新输入宽度:"));
-					break; 
+					break;
 				}
 				//销毁窗口.
+				IsEnter = true;
 				DestroyWindow(EditDiffNum);
 				DestroyWindow(EditHeight);
 				DestroyWindow(EditWidth);
