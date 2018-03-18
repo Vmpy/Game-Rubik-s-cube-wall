@@ -3,7 +3,8 @@
 #include <string>
 #include <sstream>
 #include <cstdlib>
-#include <ctime> 
+#include <ctime>
+#include <cmath>
 
 int Width;
 int Height;
@@ -17,7 +18,8 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
 
 void SetColor(void);
-
+bool IsInRect(int,int,RECT*);
+void MakeDifferent(COLORREF*,POINT*,int);
 COLORREF **Map;
 
 int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,int nCmdShow)
@@ -42,6 +44,7 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 	EditClass.hIconSm = LoadIcon(NULL,IDI_APPLICATION); /* use the name "A" to use the project icon */
 	
 	memset(&WndClass,0,sizeof(WndClass));
+	WndClass.style = CS_VREDRAW|CS_HREDRAW;
 	WndClass.cbSize = sizeof(WNDCLASSEX);
 	WndClass.lpfnWndProc = WndProc;
 	WndClass.hInstance = hInstance;
@@ -128,15 +131,32 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 	static int Clienty;
 	static HBRUSH hBrush;
 	static HPEN hPen;
+	
+	static POINT Different[3];
+	static COLORREF TmpRgb[3];
+	static int Count;
+	
+	bool IsDifferent = false;
 	switch(Message)
 	{
 		case WM_CREATE:
 		{
 			Clientx = ((LPCREATESTRUCT)lParam)->cx;
 			Clienty = ((LPCREATESTRUCT)lParam)->cy;
-			EachWidth = Clientx/2/Width;
-			EachHeight = Clienty/Height;
-			MoveWindow(hwnd,100,100,2*(::Width*::EachWidth),::Height*::EachHeight + 40,true);
+			EachWidth = round(Clientx/2/Width);
+			EachHeight = round(Clienty/Height);
+			MoveWindow(hwnd,100,100,2*(::Width*::EachWidth),(::Height+1)*::EachHeight,true);
+			MakeDifferent(TmpRgb,Different,3);
+			Count = 3;
+			break;
+		}
+		
+		case WM_SIZE:
+		{
+			Clientx = GET_X_LPARAM(lParam);
+			Clienty = GET_Y_LPARAM(lParam);
+			EachWidth = round(Clientx/2/Width);
+			EachHeight = round(Clienty/Height);
 			break;
 		}
 		
@@ -156,6 +176,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 					DeleteObject(hBrush);
 				}
 			}
+			
 			for(int x = 0;x < Width;x++)
 			{
 				for(int y = 0;y < Height;y++)
@@ -164,16 +185,66 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 					rect.top = y*::EachHeight;
 					rect.right = (x+1)*::EachWidth + Clientx/2;
 					rect.bottom = (y+1)*::EachHeight;
-					hBrush = CreateSolidBrush(::Map[x][y]);
+					for(int i = 0;i < 3;i++)
+					{
+						if(Different[i].x != -1 && Different[i].y != -1 && Different[i].x == x && Different[i].y == y)
+						{
+							hBrush = CreateSolidBrush(TmpRgb[i]);
+							IsDifferent = true;
+						}
+						
+					}
+					if(!IsDifferent)
+					{
+						hBrush = CreateSolidBrush(::Map[x][y]);
+						IsDifferent = false;
+					}
+					else
+					{
+						IsDifferent = false;
+					}
 					FillRect(hdc,&rect,hBrush);
 					DeleteObject(hBrush);
 				}
 			}
+			
 			hPen = CreatePen(PS_SOLID,2,RGB(0,0,0));
 			SelectObject(hdc,hPen);
 			MoveToEx(hdc,Clientx/2,0,NULL);
 			LineTo(hdc,Clientx/2,Clienty); 
 			EndPaint(hwnd,&ps);
+			break; 
+		}
+		
+		case WM_LBUTTONUP:
+		{
+			int xPos = GET_X_LPARAM(lParam);
+			int yPos = GET_Y_LPARAM(lParam);
+			for(int x = 0;x < Width;x++)
+			{
+				for(int y = 0;y < Height;y++)
+				{
+					rect.left = x*::EachWidth + Clientx/2;
+					rect.top = y*::EachHeight;
+					rect.right = (x+1)*::EachWidth + Clientx/2;
+					rect.bottom = (y+1)*::EachHeight;
+					
+					if(IsInRect(xPos,yPos,&rect))
+					{
+						for(int i = 0;i < 3;i++)
+						{
+							if(Different[i].x == x &&Different[i].y == y)
+							{
+								Different[i].x = -1;
+								Different[i].y = -1;
+								Count--;
+								InvalidateRect(hwnd,NULL,true);
+								return 0;
+							}
+						}
+					}
+				}
+			}
 			break; 
 		}
 		
@@ -228,7 +299,7 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 				Tmp >> ::Width;
 				Tmp2 << Tmpy;
 				Tmp2 >> ::Height;
-				if(::Width <= 0 || ::Height <= 0 || WindowWidth/::Width == 0 || WindowHeight/::Height == 0)
+				if(::Width <= 0 || ::Height <= 0 || WindowWidth/2/::Width == 0 || WindowHeight/::Height == 0)
 				{
 					MessageBox(hwnd,TEXT("输入有误，请重新输入:"),TEXT("提示:"),MB_OK);
 					SendMessage(EditHeight,WM_SETTEXT,0,(LPARAM)("请重新输入高度:"));
@@ -263,5 +334,29 @@ void SetColor(void)
 		{
 			::Map[x][y] = RGB(rand()%256,rand()%256,rand()%256);
 		}
+	}
+}
+
+bool IsInRect(int x,int y,RECT *rect)
+{
+	if(x > rect->left && x < rect->right && y > rect->top && y < rect->bottom)
+	{
+		return true;
+	}
+	return false;
+}
+
+void MakeDifferent(COLORREF* TmpRgb,POINT* Point,int i)
+{
+	for(int index = 0;index < i;index++)
+	{
+		do{
+			Point[index].x = rand()%Width;
+			Point[index].y = rand()%Height;
+		}while(Point[index].x == Point[index-1].x && Point[index].y == Point[index-1].y && index != 0);
+		
+		do{
+			TmpRgb[index] = RGB(rand()%256,rand()%256,rand()%256);
+		}while(TmpRgb[index] == ::Map[Point[index].x][Point[index].y]);
 	}
 }
