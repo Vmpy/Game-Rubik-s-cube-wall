@@ -179,6 +179,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 			AppendMenu(hMenu,0,IDM_HELP,TEXT("帮助"));//把菜单项help附加到系统菜单中
 			AppendMenu(hMenu,0,IDM_RESTART,TEXT("重新开始"));
 			AppendMenu(hMenu,0,IDM_ABOUT,TEXT("关于"));
+			SetMenu(hwnd,hMenu);
 			
 			Clientx = ((LPCREATESTRUCT)lParam)->cx;
 			Clienty = ((LPCREATESTRUCT)lParam)->cy;
