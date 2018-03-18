@@ -10,8 +10,9 @@ int Width;
 int Height;
 int EachWidth;
 int EachHeight;
-const int WindowWidth = 500*1.5;
-const int WindowHeight = 500*1.5;
+int DiffNum;
+const int WindowWidth = 500*1.2;
+const int WindowHeight = 500*1.2;
 const char* szAppName = TEXT("Rubiks's cube Wall");
 
 LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
@@ -60,6 +61,7 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 		MessageBox(NULL,"Window Registration Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
 		return 0;
 	}
+	
 	if(!RegisterClassEx(&WndClass))
 	{
 		MessageBox(NULL,"Window Registration Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
@@ -132,8 +134,8 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 	static HBRUSH hBrush;
 	static HPEN hPen;
 	
-	static POINT Different[3];
-	static COLORREF TmpRgb[3];
+	static POINT* Different;	//不同的 
+	static COLORREF *TmpRgb;
 	static int Count;
 	
 	bool IsDifferent = false;
@@ -152,9 +154,12 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 			{
 				wsprintf(szBuffer,TEXT("恭喜您，在%d秒内找完全部不同方块!"),Time);
 				KillTimer(hwnd,0);
+				delete [] Different;
+				delete [] TmpRgb;
 				MessageBox(hwnd,szBuffer,TEXT("提示"),MB_OK);
+				DestroyWindow(hwnd);
 			}
-			break; 
+			break;
 		}
 		
 		case WM_CREATE:
@@ -164,9 +169,10 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 			EachWidth = round(Clientx/2/Width);
 			EachHeight = round(Clienty/Height);
 			MoveWindow(hwnd,100,100,2*(::Width*::EachWidth),(::Height+1)*::EachHeight,true);
-			MakeDifferent(TmpRgb,Different,3);
-			Count = 3;
-			SetWindowText(hwnd,TEXT("魔方墙找茬器 剩余:3 时间:0s"));
+			Different = new POINT[DiffNum];
+			TmpRgb = new COLORREF[DiffNum];
+			MakeDifferent(TmpRgb,Different,DiffNum);
+			Count = DiffNum;
 			SetTimer(hwnd,0,1000,0);
 			break;
 		}
@@ -183,6 +189,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 		case WM_PAINT:
 		{
 			hdc = BeginPaint(hwnd,&ps);
+			//绘制左边区域 
 			for(int x = 0;x < Width;x++)
 			{
 				for(int y = 0;y < Height;y++)
@@ -196,7 +203,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 					DeleteObject(hBrush);
 				}
 			}
-			
+			//绘制右边区域 
 			for(int x = 0;x < Width;x++)
 			{
 				for(int y = 0;y < Height;y++)
@@ -227,7 +234,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 					DeleteObject(hBrush);
 				}
 			}
-			
+			//画出分割线，便于观察. 
 			hPen = CreatePen(PS_SOLID,2,RGB(0,0,0));
 			SelectObject(hdc,hPen);
 			MoveToEx(hdc,Clientx/2,0,NULL);
@@ -253,7 +260,8 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 					{
 						for(int i = 0;i < 3;i++)
 						{
-							if(Different[i].x == x &&Different[i].y == y)
+							//检测是否击中了目标位置(魔方墙中的不同颜色方块). 
+							if(Different[i].x == x && Different[i].y == y)
 							{
 								Different[i].x = -1;
 								Different[i].y = -1;
@@ -280,17 +288,23 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
+/**
+*信息输入窗口窗口过程. 
+*/
 LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 {
+	static HWND EditDiffNum;
 	static HWND EditWidth;
 	static HWND EditHeight;
 	static HWND ButtonOK;
 	static char Width[32];
 	static char Height[32];
+	static char DiffNum[32];
 	switch(Message)
 	{
 		case WM_CREATE:
 		{
+			EditDiffNum = EditHeight = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入不同方块数目:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 - 50,125,30,hwnd,(HMENU)-1,0,0);
 			EditHeight = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入高度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3,125,30,hwnd,(HMENU)0,0,0); 
 			EditWidth = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入宽度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 50,125,30,hwnd,(HMENU)1,0,0); 
 			ButtonOK = CreateWindowEx(NULL,TEXT("BUTTON"),"OK",WS_CHILD|BS_PUSHBUTTON|BS_FLAT|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 100,50,25,hwnd,(HMENU)2,0,0);
@@ -311,21 +325,31 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 			{
 				SendMessage(EditHeight,WM_GETTEXT,32,(LPARAM)Height);
 				SendMessage(EditWidth,WM_GETTEXT,32,(LPARAM)Width);
+				SendMessage(EditDiffNum,WM_GETTEXT,32,(LPARAM)DiffNum);
+				
+				//转换字符串与数字. 
 				std::string Tmpx = Width;
 				std::string Tmpy = Height;
+				std::string TmpNum = DiffNum;
 				std::stringstream Tmp;
 				std::stringstream Tmp2;
+				std::stringstream Tmp3;
 				Tmp << Tmpx;
 				Tmp >> ::Width;
 				Tmp2 << Tmpy;
 				Tmp2 >> ::Height;
-				if(::Width <= 0 || ::Height <= 0 || WindowWidth/2/::Width == 0 || WindowHeight/::Height == 0)
+				Tmp3 << TmpNum;
+				Tmp3 >> ::DiffNum;
+				
+				if(::DiffNum <= 0 || ::DiffNum > ::Width*::Height || ::Width <= 0 || ::Height <= 0 || WindowWidth/2/::Width == 0 || WindowHeight/::Height == 0)
 				{
 					MessageBox(hwnd,TEXT("输入有误，请重新输入:"),TEXT("提示:"),MB_OK);
 					SendMessage(EditHeight,WM_SETTEXT,0,(LPARAM)("请重新输入高度:"));
 					SendMessage(EditWidth,WM_SETTEXT,0,(LPARAM)("请重新输入宽度:"));
 					break; 
 				}
+				//销毁窗口.
+				DestroyWindow(EditDiffNum);
 				DestroyWindow(EditHeight);
 				DestroyWindow(EditWidth);
 				DestroyWindow(ButtonOK);
@@ -346,6 +370,9 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
+/**
+*为每一个方块取一个随机颜色值. 
+*/
 void SetColor(void)
 {
 	for(int x = 0;x < Width;x++)
@@ -357,6 +384,12 @@ void SetColor(void)
 	}
 }
 
+/**
+*检测一个点是否在一个矩形中.
+*@param x:点的x坐标.
+*@param y:点的y坐标.
+*@return:bool. 
+*/
 bool IsInRect(int x,int y,RECT *rect)
 {
 	if(x > rect->left && x < rect->right && y > rect->top && y < rect->bottom)
@@ -366,6 +399,12 @@ bool IsInRect(int x,int y,RECT *rect)
 	return false;
 }
 
+/**
+*制造i个不同区域(坐标与颜色值)
+*@param TmpRgb:不同方块区域的颜色值(随机设置).
+*@param Point:不同方块点坐标.
+*@param i:不同方块的数量. 
+*/
 void MakeDifferent(COLORREF* TmpRgb,POINT* Point,int i)
 {
 	for(int index = 0;index < i;index++)
