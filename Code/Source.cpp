@@ -1,6 +1,10 @@
 #include <windows.h>
 #include <windowsx.h>
+#include <string>
+#include <sstream>
 
+int Width;
+int Height;
 const int WindowWidth = 640;
 const int WindowHeight = 480;
 const char* szAppName = TEXT("Rubiks's cube Wall");
@@ -106,9 +110,9 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 		{
 			Clientx = ((LPCREATESTRUCT)lParam)->cx;
 			Clienty = ((LPCREATESTRUCT)lParam)->cy;
-			LeftWindow = CreateWindowEx(NULL,szAppName,TEXT(""),WS_CHILD,CW_USEDEFAULT,CW_USEDEFAULT,Clientx/2,Clienty,hwnd,NULL,NULL,NULL);
+			LeftWindow = CreateWindowEx(NULL,szAppName,0,WS_CHILD,CW_USEDEFAULT,CW_USEDEFAULT,Clientx/2,Clienty,hwnd,NULL,NULL,NULL);
 			SetWindowLong(LeftWindow,GWL_WNDPROC,(LONG)LeftWndProc);
-			RightWindow = CreateWindowEx(NULL,szAppName,TEXT(""),WS_CHILD,CW_USEDEFAULT + Clientx/2,CW_USEDEFAULT,Clientx/2,Clienty,hwnd,NULL,NULL,NULL);
+			RightWindow = CreateWindowEx(NULL,szAppName,0,WS_CHILD,CW_USEDEFAULT + Clientx/2,CW_USEDEFAULT,Clientx/2,Clienty,hwnd,NULL,NULL,NULL);
 			SetWindowLong(RightWindow,GWL_WNDPROC,(LONG)RightWndProc);
 			break;
 		} 
@@ -136,8 +140,8 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 	{
 		case WM_CREATE:
 		{
-			EditHeight = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入高度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3,100,20,hwnd,(HMENU)0,0,0); 
-			EditWidth = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入宽度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 25,100,20,hwnd,(HMENU)1,0,0); 
+			EditHeight = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入高度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3,125,30,hwnd,(HMENU)0,0,0); 
+			EditWidth = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入宽度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 50,125,30,hwnd,(HMENU)1,0,0); 
 			ButtonOK = CreateWindowEx(NULL,TEXT("BUTTON"),"OK",WS_CHILD|BS_PUSHBUTTON|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 100,50,25,hwnd,(HMENU)2,0,0);
 			break;
 		}
@@ -156,6 +160,21 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 			{
 				SendMessage(EditHeight,WM_GETTEXT,32,(LPARAM)Height);
 				SendMessage(EditWidth,WM_GETTEXT,32,(LPARAM)Width);
+				std::string Tmpx = Width;
+				std::string Tmpy = Height;
+				std::stringstream Tmp;
+				std::stringstream Tmp2;
+				Tmp << Tmpx;
+				Tmp >> ::Width;
+				Tmp2 << Tmpy;
+				Tmp2 >> ::Height;
+				if(::Width <= 0 || ::Height <= 0)
+				{
+					MessageBox(hwnd,TEXT("输入有误，请重新输入:"),TEXT("提示:"),MB_OK);
+					SendMessage(EditHeight,WM_SETTEXT,0,(LPARAM)("请重新输入高度:"));
+					SendMessage(EditWidth,WM_SETTEXT,0,(LPARAM)("请重新输入宽度:"));
+					break; 
+				}
 				DestroyWindow(EditHeight);
 				DestroyWindow(EditWidth);
 				DestroyWindow(ButtonOK);
