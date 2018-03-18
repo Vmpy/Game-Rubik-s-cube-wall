@@ -4,7 +4,6 @@
 #include <sstream>
 #include <cstdlib>
 #include <ctime>
-#include <cmath>
 #include "resource.h" 
 
 int Width;
@@ -12,8 +11,8 @@ int Height;
 int EachWidth;
 int EachHeight;
 int DiffNum;
-const int WindowWidth = 500*1.2;
-const int WindowHeight = 500*1.2;
+const int WindowWidth = 800;
+const int WindowHeight = 420;
 const char* szAppName = TEXT("Rubiks's cube Wall");
 
 bool IsEnter = false; //玩家是否正常地输入了各类信息. 
@@ -183,9 +182,10 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 			
 			Clientx = ((LPCREATESTRUCT)lParam)->cx;
 			Clienty = ((LPCREATESTRUCT)lParam)->cy;
-			EachWidth = round(Clientx/2/Width);
-			EachHeight = round(Clienty/Height);
-			MoveWindow(hwnd,100,100,2*(::Width*::EachWidth),(::Height+1)*::EachHeight,true);
+			/*通过计算得到一个合适的长和宽，并调整窗口大小*/
+			EachWidth = (Clientx + (Width - ((Clientx)%Width)))/Width/2;
+			EachHeight = (Clienty + (Height - (Clienty%Height)))/Height;
+			MoveWindow(hwnd,100,100,EachHeight*Height*2,EachHeight*Height,true);
 			Different = new POINT[DiffNum];
 			TmpRgb = new COLORREF[DiffNum];
 			MakeDifferent(TmpRgb,Different,DiffNum);
@@ -210,8 +210,8 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 		{
 			Clientx = GET_X_LPARAM(lParam);
 			Clienty = GET_Y_LPARAM(lParam);
-			EachWidth = round(Clientx/2/Width);
-			EachHeight = round(Clienty/Height);
+			EachWidth = (Clientx + (Width - ((Clientx)%Width)))/Width/2;
+			EachHeight = (Clienty + (Height - (Clienty%Height)))/Height;
 			break;
 		}
 		
