@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
+#include "resource.h" 
 
 int Width;
 int Height;
@@ -55,6 +56,7 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 	
 	WndClass.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
 	WndClass.lpszClassName = szAppName;
+	WndClass.lpszMenuName = 0;
 	WndClass.hIcon = LoadIcon(0,IDI_APPLICATION); /* Load a standard icon */
 	WndClass.hIconSm = LoadIcon(0,IDI_APPLICATION); /* use the name "A" to use the project icon */
 	
@@ -140,6 +142,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 	static int Clienty;
 	static HBRUSH hBrush;
 	static HPEN hPen;
+	static HMENU hMenu;
 	
 	static POINT* Different;	//不同的 
 	static COLORREF *TmpRgb;
@@ -171,6 +174,12 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 		
 		case WM_CREATE:
 		{
+			hMenu = CreateMenu();
+			AppendMenu(hMenu,MF_SEPARATOR,0,NULL);//把分割线附加到系统菜单中
+			AppendMenu(hMenu,0,IDM_HELP,TEXT("帮助"));//把菜单项help附加到系统菜单中
+			AppendMenu(hMenu,0,IDM_RESTART,TEXT("重新开始"));
+			AppendMenu(hMenu,0,IDM_ABOUT,TEXT("关于"));
+			
 			Clientx = ((LPCREATESTRUCT)lParam)->cx;
 			Clienty = ((LPCREATESTRUCT)lParam)->cy;
 			EachWidth = round(Clientx/2/Width);
@@ -183,7 +192,19 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 			SetTimer(hwnd,0,1000,0);
 			break;
 		}
-		
+		case WM_COMMAND:
+		{
+			if(lParam == 0)
+			{
+				switch(LOWORD(wParam))
+				{
+					case IDM_HELP:MessageBox(hwnd,TEXT("点击屏幕右侧不同的方块进行游戏."),TEXT("帮助"),MB_ICONINFORMATION);break; 
+					case IDM_RESTART:/*TODO:添加重新开始游戏的代码.*/break;
+					case IDM_ABOUT:MessageBox(hwnd,TEXT("魔方墙找茬器,用于训练3D眼.\n\n作者:Vmpy \nGithub:www.github.com/vmpy"),TEXT("帮助"),MB_ICONINFORMATION);break; 
+				}
+			}
+			break; 
+		}
 		case WM_SIZE:
 		{
 			Clientx = GET_X_LPARAM(lParam);
