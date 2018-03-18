@@ -219,7 +219,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 					rect.top = y*::EachHeight;
 					rect.right = (x+1)*::EachWidth + Clientx/2;
 					rect.bottom = (y+1)*::EachHeight;
-					for(int i = 0;i < 3;i++)
+					for(int i = 0;i < DiffNum;i++)
 					{
 						if(Different[i].x != -1 && Different[i].y != -1 && Different[i].x == x && Different[i].y == y)
 						{
@@ -265,7 +265,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 					
 					if(IsInRect(xPos,yPos,&rect))
 					{
-						for(int i = 0;i < 3;i++)
+						for(int i = 0;i < DiffNum;i++)
 						{
 							//检测是否击中了目标位置(魔方墙中的不同颜色方块). 
 							if(Different[i].x == x && Different[i].y == y)
@@ -316,9 +316,9 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 			hFont = CreateFont(18,8,0,0,FW_THIN,false,false,false,GB2312_CHARSET,OUT_CHARACTER_PRECIS,
             CLIP_CHARACTER_PRECIS,DEFAULT_QUALITY,FF_MODERN,TEXT("宋体"));
             
-			EditDiffNum = EditHeight = CreateWindowEx(0,TEXT("EDIT"),TEXT("请输入不同方块数目:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 - 50,180,30,hwnd,(HMENU)-1,0,0);
-			EditHeight = CreateWindowEx(0,TEXT("EDIT"),TEXT("请输入高度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3,150,30,hwnd,(HMENU)0,0,0); 
-			EditWidth = CreateWindowEx(0,TEXT("EDIT"),TEXT("请输入宽度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 50,150,30,hwnd,(HMENU)1,0,0); 
+			EditDiffNum = EditHeight = CreateWindowEx(0,TEXT("EDIT"),TEXT("请输入不同方块数目:"),WS_CHILD|ES_NUMBER|ES_LEFT|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 - 50,180,25,hwnd,(HMENU)-1,0,0);
+			EditHeight = CreateWindowEx(0,TEXT("EDIT"),TEXT("请输入高度:"),WS_CHILD|ES_NUMBER|ES_LEFT|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3,150,25,hwnd,(HMENU)0,0,0); 
+			EditWidth = CreateWindowEx(0,TEXT("EDIT"),TEXT("请输入宽度:"),WS_CHILD|ES_NUMBER|ES_LEFT|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 50,150,25,hwnd,(HMENU)1,0,0); 
 			ButtonOK = CreateWindowEx(0,TEXT("BUTTON"),"OK",WS_CHILD|BS_PUSHBUTTON|BS_FLAT|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 100,50,25,hwnd,(HMENU)2,0,0);
 			SendMessage(EditDiffNum,WM_SETFONT,(WPARAM)hFont,0);
 			SendMessage(EditHeight,WM_SETFONT,(WPARAM)hFont,0);
