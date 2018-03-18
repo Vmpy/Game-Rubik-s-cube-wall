@@ -137,8 +137,26 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 	static int Count;
 	
 	bool IsDifferent = false;
+	
+	static char szBuffer[45];
+	static int Time = 0;
+	
 	switch(Message)
 	{
+		case WM_TIMER:
+		{
+			Time++;
+			wsprintf(szBuffer,TEXT("魔方墙找茬器 剩余:%d 时间:%ds"),Count,Time);
+			SetWindowText(hwnd,szBuffer);
+			if(Count == 0)
+			{
+				wsprintf(szBuffer,TEXT("恭喜您，在%d秒内找完全部不同方块!"),Time);
+				KillTimer(hwnd,0);
+				MessageBox(hwnd,szBuffer,TEXT("提示"),MB_OK);
+			}
+			break; 
+		}
+		
 		case WM_CREATE:
 		{
 			Clientx = ((LPCREATESTRUCT)lParam)->cx;
@@ -148,6 +166,8 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 			MoveWindow(hwnd,100,100,2*(::Width*::EachWidth),(::Height+1)*::EachHeight,true);
 			MakeDifferent(TmpRgb,Different,3);
 			Count = 3;
+			SetWindowText(hwnd,TEXT("魔方墙找茬器 剩余:3 时间:0s"));
+			SetTimer(hwnd,0,1000,0);
 			break;
 		}
 		
