@@ -2,16 +2,23 @@
 #include <windowsx.h>
 #include <string>
 #include <sstream>
+#include <cstdlib>
+#include <ctime> 
 
 int Width;
 int Height;
-const int WindowWidth = 640;
-const int WindowHeight = 480;
+int EachWidth;
+int EachHeight;
+const int WindowWidth = 500*1.5;
+const int WindowHeight = 500*1.5;
 const char* szAppName = TEXT("Rubiks's cube Wall");
+
 LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
 LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
-LRESULT CALLBACK LeftWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
-LRESULT CALLBACK RightWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
+
+void SetColor(void);
+
+COLORREF **Map;
 
 int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,int nCmdShow)
 {
@@ -21,7 +28,8 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 	MSG msg; /* A temporary location for all messages */
 	
 	HWND EditHwnd;
-
+	
+	srand((unsigned int)time(0));
 	memset(&EditClass,0,sizeof(EditClass));
 	EditClass.cbSize = sizeof(WNDCLASSEX);
 	EditClass.lpfnWndProc = EditWndProc;
@@ -74,7 +82,13 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 		DispatchMessage(&msg); /* Send it to WndProc */
 	}
 
-	hwnd = CreateWindowEx(WS_EX_CLIENTEDGE,szAppName,"Caption",WS_VISIBLE|WS_OVERLAPPEDWINDOW,
+	::Map = new COLORREF*[Width];
+	for(int i = 0;i < Width;i++)
+	{
+		::Map[i] = new COLORREF[Height];
+	}
+	SetColor();
+	hwnd = CreateWindowEx(WS_EX_CLIENTEDGE,szAppName,TEXT("魔方墙找茬器"),WS_VISIBLE|WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, /* x */
 		CW_USEDEFAULT, /* y */
 		WindowWidth, /* width */
@@ -95,27 +109,73 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 		TranslateMessage(&msg); /* Translate key codes to chars if present */
 		DispatchMessage(&msg); /* Send it to WndProc */
 	}
+	
+	for (int i = 0; i < Width;i++)
+    {
+        delete [] ::Map[i];
+    }
+    delete [] ::Map;
+    
 	return msg.wParam;
 }
 
 LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 {
+	static PAINTSTRUCT ps;
+	static HDC hdc;
+	static RECT rect;
 	static int Clientx;
 	static int Clienty;
-	static HWND LeftWindow;
-	static HWND RightWindow;
+	static HBRUSH hBrush;
+	static HPEN hPen;
 	switch(Message)
 	{
 		case WM_CREATE:
 		{
 			Clientx = ((LPCREATESTRUCT)lParam)->cx;
 			Clienty = ((LPCREATESTRUCT)lParam)->cy;
-			LeftWindow = CreateWindowEx(NULL,szAppName,0,WS_CHILD,CW_USEDEFAULT,CW_USEDEFAULT,Clientx/2,Clienty,hwnd,NULL,NULL,NULL);
-			SetWindowLong(LeftWindow,GWL_WNDPROC,(LONG)LeftWndProc);
-			RightWindow = CreateWindowEx(NULL,szAppName,0,WS_CHILD,CW_USEDEFAULT + Clientx/2,CW_USEDEFAULT,Clientx/2,Clienty,hwnd,NULL,NULL,NULL);
-			SetWindowLong(RightWindow,GWL_WNDPROC,(LONG)RightWndProc);
+			EachWidth = Clientx/2/Width;
+			EachHeight = Clienty/Height;
+			MoveWindow(hwnd,100,100,2*(::Width*::EachWidth),::Height*::EachHeight + 40,true);
 			break;
-		} 
+		}
+		
+		case WM_PAINT:
+		{
+			hdc = BeginPaint(hwnd,&ps);
+			for(int x = 0;x < Width;x++)
+			{
+				for(int y = 0;y < Height;y++)
+				{
+					rect.left = x*::EachWidth;
+					rect.top = y*::EachHeight;
+					rect.right = (x+1)*::EachWidth;
+					rect.bottom = (y+1)*::EachHeight;
+					hBrush = CreateSolidBrush(::Map[x][y]);
+					FillRect(hdc,&rect,hBrush);
+					DeleteObject(hBrush);
+				}
+			}
+			for(int x = 0;x < Width;x++)
+			{
+				for(int y = 0;y < Height;y++)
+				{
+					rect.left = x*::EachWidth + Clientx/2;
+					rect.top = y*::EachHeight;
+					rect.right = (x+1)*::EachWidth + Clientx/2;
+					rect.bottom = (y+1)*::EachHeight;
+					hBrush = CreateSolidBrush(::Map[x][y]);
+					FillRect(hdc,&rect,hBrush);
+					DeleteObject(hBrush);
+				}
+			}
+			hPen = CreatePen(PS_SOLID,2,RGB(0,0,0));
+			SelectObject(hdc,hPen);
+			MoveToEx(hdc,Clientx/2,0,NULL);
+			LineTo(hdc,Clientx/2,Clienty); 
+			EndPaint(hwnd,&ps);
+			break; 
+		}
 		
 		case WM_DESTROY:
 		{
@@ -142,7 +202,7 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 		{
 			EditHeight = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入高度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3,125,30,hwnd,(HMENU)0,0,0); 
 			EditWidth = CreateWindowEx(NULL,TEXT("EDIT"),TEXT("请输入宽度:"),WS_CHILD|ES_NUMBER|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 50,125,30,hwnd,(HMENU)1,0,0); 
-			ButtonOK = CreateWindowEx(NULL,TEXT("BUTTON"),"OK",WS_CHILD|BS_PUSHBUTTON|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 100,50,25,hwnd,(HMENU)2,0,0);
+			ButtonOK = CreateWindowEx(NULL,TEXT("BUTTON"),"OK",WS_CHILD|BS_PUSHBUTTON|BS_FLAT|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 100,50,25,hwnd,(HMENU)2,0,0);
 			break;
 		}
 		
@@ -168,7 +228,7 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 				Tmp >> ::Width;
 				Tmp2 << Tmpy;
 				Tmp2 >> ::Height;
-				if(::Width <= 0 || ::Height <= 0)
+				if(::Width <= 0 || ::Height <= 0 || WindowWidth/::Width == 0 || WindowHeight/::Height == 0)
 				{
 					MessageBox(hwnd,TEXT("输入有误，请重新输入:"),TEXT("提示:"),MB_OK);
 					SendMessage(EditHeight,WM_SETTEXT,0,(LPARAM)("请重新输入高度:"));
@@ -195,34 +255,13 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-LRESULT CALLBACK LeftWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
+void SetColor(void)
 {
-	switch(Message)
+	for(int x = 0;x < Width;x++)
 	{
-		case WM_DESTROY:
+		for(int y = 0;y < Height;y++)
 		{
-			PostQuitMessage(0);
-			break;
+			::Map[x][y] = RGB(rand()%256,rand()%256,rand()%256);
 		}
-		
-		default:
-			return DefWindowProc(hwnd, Message, wParam, lParam);
 	}
-	return 0;
-}
-
-LRESULT CALLBACK RightWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
-{
-	switch(Message)
-	{
-		case WM_DESTROY:
-		{
-			PostQuitMessage(0);
-			break;
-		}
-		
-		default:
-			return DefWindowProc(hwnd, Message, wParam, lParam);
-	}
-	return 0;
 }
