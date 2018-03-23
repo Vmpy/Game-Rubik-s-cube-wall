@@ -503,7 +503,7 @@ bool IsInRect(int x,int y,RECT *rect)
 */
 void MakeDifferent(COLORREF* TmpRgb,POINT* Point,int i)
 {
-    if(!IsCubeColor)
+    if(IsCubeColor)
     {
         for(int index = 0;index < i;index++)
         {
@@ -526,7 +526,7 @@ void MakeDifferent(COLORREF* TmpRgb,POINT* Point,int i)
             }while(TmpRgb[index] == ::Map[Point[index].x][Point[index].y]);
         }
     }
-    else    //如果是选中了魔方配色: 
+    else    //如果没有选中了魔方配色: 
     {
         for(int index = 0;index < i;index++)
         {
