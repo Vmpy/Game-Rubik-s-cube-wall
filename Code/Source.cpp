@@ -113,7 +113,8 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
         WindowWidth, /* width */
         WindowHeight, /* height */
         0,0,hInstance,0);
-      ShowWindow(hwnd,SW_SHOWMINIMIZED);
+    
+    ShowWindow(hwnd,nCmdShow);
     UpdateWindow(hwnd);
     
     if(hwnd == 0)
