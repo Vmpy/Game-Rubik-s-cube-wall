@@ -13,9 +13,13 @@ int EachHeight;
 int DiffNum;
 const int WindowWidth = 800;
 const int WindowHeight = 420;
+const int BrushWidth = 2; 
 const char* szAppName = TEXT("Rubiks's cube Wall");
+const HBRUSH BlackBrush = CreateSolidBrush(RGB(0,0,0));
 
 bool IsEnter = false; //玩家是否正常地输入了各类信息. 
+bool IsBorder = false;//玩家是否选中绘制边框. 
+bool IsCubeColor = false;//玩家是否选中魔方配色. 
 
 LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
 LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
@@ -41,7 +45,7 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 	EditClass.hInstance	 = hInstance;
 	EditClass.hCursor = LoadCursor(0,IDC_ARROW);
 	
-	EditClass.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
+	EditClass.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
 	EditClass.lpszClassName = "GETNUM";
 	EditClass.hIcon	= LoadIcon(0,IDI_APPLICATION); /* Load a standard icon */
 	EditClass.hIconSm = LoadIcon(0,IDI_APPLICATION); /* use the name "A" to use the project icon */
@@ -71,11 +75,11 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 		return 0;
 	}
 	
-	EditHwnd = CreateWindowEx(WS_EX_CLIENTEDGE,"GETNUM",TEXT("请先输入数据:"),WS_VISIBLE,
+	EditHwnd = CreateWindowEx(0,"GETNUM",TEXT("请输入数据:"),WS_VISIBLE|WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, /* x */
 		CW_USEDEFAULT, /* y */
-		400, /* width */
-		400, /* height */
+		600, /* width */
+		600, /* height */
 		0,0,0,0);
 		
 	if(EditHwnd == 0)
@@ -100,7 +104,9 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 	{
 		::Map[i] = new COLORREF[Height];
 	}
+	
 	SetColor();
+	
 	hwnd = CreateWindowEx(WS_EX_CLIENTEDGE,szAppName,TEXT("魔方墙找茬器"),WS_VISIBLE|WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, /* x */
 		CW_USEDEFAULT, /* y */
@@ -185,7 +191,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 			/*通过计算得到一个合适的长和宽，并调整窗口大小*/
 			EachWidth = (Clientx + (Width - ((Clientx)%Width)))/Width/2;
 			EachHeight = (Clienty + (Height - (Clienty%Height)))/Height;
-			MoveWindow(hwnd,100,100,EachHeight*Height*2,EachHeight*Height,true);
+			MoveWindow(hwnd,100,100,EachHeight*Height*2 + BrushWidth,EachHeight*Height,true);
 			Different = new POINT[DiffNum];
 			TmpRgb = new COLORREF[DiffNum];
 			MakeDifferent(TmpRgb,Different,DiffNum);
@@ -229,6 +235,10 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 					rect.bottom = (y+1)*::EachHeight;
 					hBrush = CreateSolidBrush(::Map[x][y]);
 					FillRect(hdc,&rect,hBrush);
+					if(::IsBorder)
+					{
+						FrameRect(hdc,&rect,BlackBrush);
+					}
 					DeleteObject(hBrush);
 				}
 			}
@@ -237,9 +247,9 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 			{
 				for(int y = 0;y < Height;y++)
 				{
-					rect.left = x*::EachWidth + Clientx/2;
+					rect.left = x*::EachWidth + Clientx/2 + BrushWidth;
 					rect.top = y*::EachHeight;
-					rect.right = (x+1)*::EachWidth + Clientx/2;
+					rect.right = (x+1)*::EachWidth + Clientx/2 + BrushWidth;
 					rect.bottom = (y+1)*::EachHeight;
 					for(int i = 0;i < DiffNum;i++)
 					{
@@ -260,16 +270,20 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 						IsDifferent = false;
 					}
 					FillRect(hdc,&rect,hBrush);
+					if(::IsBorder)
+					{
+						FrameRect(hdc,&rect,BlackBrush);
+					}
 					DeleteObject(hBrush);
 				}
 			}
 			//画出分割线，便于观察. 
-			hPen = CreatePen(PS_SOLID,2,RGB(0,0,0));
+			hPen = CreatePen(PS_SOLID,BrushWidth,RGB(0,0,0));
 			SelectObject(hdc,hPen);
 			MoveToEx(hdc,Clientx/2,0,0);
 			LineTo(hdc,Clientx/2,Clienty); 
 			EndPaint(hwnd,&ps);
-			break; 
+			break;
 		}
 		
 		case WM_LBUTTONUP:
@@ -308,6 +322,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 		case WM_DESTROY:
 		{
 			PostQuitMessage(0);
+			DeleteObject(BlackBrush);
 			break;
 		}
 		
@@ -325,6 +340,9 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 	static HWND EditDiffNum;
 	static HWND EditWidth;
 	static HWND EditHeight;
+	static HWND IsHaveBorderGroup;
+	static HWND IsHaveBorder;
+	static HWND IsCubeColor;
 	static HWND ButtonOK;
 	static char Width[32];
 	static char Height[32];
@@ -335,17 +353,23 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 	{
 		case WM_CREATE:
 		{
-			hFont = CreateFont(18,8,0,0,FW_THIN,false,false,false,GB2312_CHARSET,OUT_CHARACTER_PRECIS,
-            CLIP_CHARACTER_PRECIS,DEFAULT_QUALITY,FF_MODERN,TEXT("宋体"));
+			hFont = CreateFont(22,8,0,0,FW_THIN,false,false,false,GB2312_CHARSET,OUT_CHARACTER_PRECIS,
+            CLIP_CHARACTER_PRECIS,DEFAULT_QUALITY,FF_MODERN,TEXT("微软雅黑"));
             
 			EditDiffNum = EditHeight = CreateWindowEx(0,TEXT("EDIT"),TEXT("请输入不同方块数目:"),WS_CHILD|ES_NUMBER|ES_LEFT|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 - 50,180,25,hwnd,(HMENU)-1,0,0);
 			EditHeight = CreateWindowEx(0,TEXT("EDIT"),TEXT("请输入高度:"),WS_CHILD|ES_NUMBER|ES_LEFT|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3,150,25,hwnd,(HMENU)0,0,0); 
 			EditWidth = CreateWindowEx(0,TEXT("EDIT"),TEXT("请输入宽度:"),WS_CHILD|ES_NUMBER|ES_LEFT|WS_BORDER|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 50,150,25,hwnd,(HMENU)1,0,0); 
 			ButtonOK = CreateWindowEx(0,TEXT("BUTTON"),"OK",WS_CHILD|BS_PUSHBUTTON|BS_FLAT|WS_VISIBLE,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 100,50,25,hwnd,(HMENU)2,0,0);
+			IsHaveBorderGroup = CreateWindowEx(0,TEXT("BUTTON"),TEXT("显示设置"),WS_CHILD|WS_VISIBLE|BS_GROUPBOX,((LPCREATESTRUCT)lParam)->cx / 3,((LPCREATESTRUCT)lParam)->cy / 3 + 150,200,100,hwnd,(HMENU)3,0,0);
+			IsHaveBorder = CreateWindowEx(0,TEXT("BUTTON"),TEXT("方块边框"),WS_CHILD|WS_VISIBLE|BS_AUTOCHECKBOX,10,20,100,20,IsHaveBorderGroup,(HMENU)4,0,0);
+			IsCubeColor = CreateWindowEx(0,TEXT("BUTTON"),TEXT("魔方配色"),WS_CHILD|WS_VISIBLE|BS_AUTOCHECKBOX,10,50,100,20,IsHaveBorderGroup,(HMENU)5,0,0);
 			SendMessage(EditDiffNum,WM_SETFONT,(WPARAM)hFont,0);
 			SendMessage(EditHeight,WM_SETFONT,(WPARAM)hFont,0);
 			SendMessage(EditWidth,WM_SETFONT,(WPARAM)hFont,0);
+			SendMessage(IsHaveBorderGroup,WM_SETFONT,(WPARAM)hFont,0);
 			SendMessage(ButtonOK,WM_SETFONT,(WPARAM)hFont,0);
+			SendMessage(IsHaveBorder,WM_SETFONT,(WPARAM)hFont,0);
+			SendMessage(IsCubeColor,WM_SETFONT,(WPARAM)hFont,0);
 			break;
 		}
 		
@@ -381,17 +405,28 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 				
 				if(::DiffNum <= 0 || ::DiffNum > ::Width*::Height || ::Width <= 0 || ::Height <= 0 || WindowWidth/2/::Width == 0 || WindowHeight/::Height == 0)
 				{
-					MessageBox(hwnd,TEXT("输入有误，请重新输入:"),TEXT("提示:"),MB_OK);
+					MessageBox(hwnd,TEXT("输入有误，请检查后重新输入:"),TEXT("提示:"),MB_OK);
 					SendMessage(EditHeight,WM_SETTEXT,0,(LPARAM)("请重新输入高度:"));
 					SendMessage(EditWidth,WM_SETTEXT,0,(LPARAM)("请重新输入宽度:"));
+					SendMessage(EditDiffNum,WM_SETTEXT,0,(LPARAM)("请重新输入个数:"));
 					break;
 				}
 				//销毁窗口.
-				IsEnter = true;
+				IsEnter = true;//进入游戏标志
+				if(SendMessage(IsHaveBorder,BM_GETCHECK,0,0) == BST_CHECKED)
+				{
+					::IsBorder = true; 
+				}
+				if(SendMessage(IsCubeColor,BM_GETCHECK,0,0) == BST_CHECKED)
+				{
+					::IsCubeColor = true;
+				}
 				DestroyWindow(EditDiffNum);
 				DestroyWindow(EditHeight);
 				DestroyWindow(EditWidth);
 				DestroyWindow(ButtonOK);
+				DestroyWindow(IsHaveBorder);
+				DestroyWindow(IsCubeColor);
 				DestroyWindow(hwnd);
 			}
 			break;
@@ -414,11 +449,33 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
 */
 void SetColor(void)
 {
-	for(int x = 0;x < Width;x++)
+	if(!IsCubeColor)
 	{
-		for(int y = 0;y < Height;y++)
+		for(int x = 0;x < Width;x++)
 		{
-			::Map[x][y] = RGB(rand()%256,rand()%256,rand()%256);
+			for(int y = 0;y < Height;y++)
+			{
+				::Map[x][y] = RGB(rand()%256,rand()%256,rand()%256);
+			}
+		}
+	}
+	else
+	{
+		for(int x = 0;x < Width;x++)
+		{
+			for(int y = 0;y < Height;y++)
+			{
+				int Tmp = rand()%6;
+				switch(Tmp)
+				{
+					case 0: ::Map[x][y] = RGB(255,255,255);break;
+					case 1: ::Map[x][y] = RGB(255,0,0);break;
+					case 2: ::Map[x][y] = RGB(255,255,0);break;
+					case 3: ::Map[x][y] = RGB(0,153,0);break;
+					case 4: ::Map[x][y] = RGB(0,0,255);break;
+					case 5: ::Map[x][y] = RGB(255,125,38);break;
+				}
+			}
 		}
 	}
 }
@@ -446,15 +503,41 @@ bool IsInRect(int x,int y,RECT *rect)
 */
 void MakeDifferent(COLORREF* TmpRgb,POINT* Point,int i)
 {
-	for(int index = 0;index < i;index++)
+	if(!IsCubeColor)
 	{
-		do{
-			Point[index].x = rand()%Width;
-			Point[index].y = rand()%Height;
-		}while(Point[index].x == Point[index-1].x && Point[index].y == Point[index-1].y && index != 0);
-		
-		do{
-			TmpRgb[index] = RGB(rand()%256,rand()%256,rand()%256);
-		}while(TmpRgb[index] == ::Map[Point[index].x][Point[index].y]);
+		for(int index = 0;index < i;index++)
+		{
+			do{
+				Point[index].x = rand()%Width;
+				Point[index].y = rand()%Height;
+			}while(Point[index].x == Point[index-1].x && Point[index].y == Point[index-1].y && index != 0);
+			
+			do{
+				int Tmp = rand()%6;
+				switch(Tmp)
+				{
+					case 0: TmpRgb[index] = RGB(255,255,255);break;
+					case 1: TmpRgb[index] = RGB(255,0,0);break;
+					case 2: TmpRgb[index] = RGB(255,255,0);break;
+					case 3: TmpRgb[index] = RGB(0,153,0);break;
+					case 4: TmpRgb[index] = RGB(0,0,255);break;
+					case 5: TmpRgb[index] = RGB(255,125,38);break;
+				}
+			}while(TmpRgb[index] == ::Map[Point[index].x][Point[index].y]);
+		}
+	}
+	else	//如果是选中了魔方配色: 
+	{
+		for(int index = 0;index < i;index++)
+		{
+			do{
+				Point[index].x = rand()%Width;
+				Point[index].y = rand()%Height;
+			}while(Point[index].x == Point[index-1].x && Point[index].y == Point[index-1].y && index != 0);
+			
+			do{
+				TmpRgb[index] = RGB(rand()%256,rand()%256,rand()%256);
+			}while(TmpRgb[index] == ::Map[Point[index].x][Point[index].y]);
+		}
 	}
 }
