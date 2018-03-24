@@ -11,12 +11,12 @@ int Height;
 int EachWidth;
 int EachHeight;
 int DiffNum;
-const int WindowWidth = 800;
-const int WindowHeight = 420;
+const int WindowWidth = GetSystemMetrics(SM_CXSCREEN);
+const int WindowHeight = GetSystemMetrics(SM_CYSCREEN);
 const int BrushWidth = 2; 
 const char* szAppName = TEXT("Rubiks's cube Wall");
 const HBRUSH BlackBrush = CreateSolidBrush(RGB(0,0,0));
-
+bool PlayAgain = true;
 bool IsEnter = false; //玩家是否正常地输入了各类信息. 
 bool IsBorder = false;//玩家是否选中绘制边框. 
 bool IsCubeColor = false;//玩家是否选中魔方配色. 
@@ -75,65 +75,69 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
         return 0;
     }
     
-    EditHwnd = CreateWindowEx(0,"GETNUM",TEXT("请输入数据:"),WS_VISIBLE|WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, /* x */
-        CW_USEDEFAULT, /* y */
-        600, /* width */
-        600, /* height */
-        0,0,0,0);
-        
-    if(EditHwnd == 0)
+    while(PlayAgain == true)
     {
-        MessageBox(0,"Window Creation Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
-        return 0;
-    }
-    
-    while(GetMessage(&msg,0,0,0))
-    {
-        TranslateMessage(&msg); /* Translate key codes to chars if present */
-        DispatchMessage(&msg); /* Send it to WndProc */
-    }
-    
-    if(!IsEnter)
-    {
-        return msg.wParam;
-    }
-
-    ::Map = new COLORREF*[Width];
-    for(int i = 0;i < Width;i++)
-    {
-        ::Map[i] = new COLORREF[Height];
-    }
-    
-    SetColor();
-    
-    hwnd = CreateWindowEx(WS_EX_CLIENTEDGE,szAppName,TEXT("魔方墙找茬器"),WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, /* x */
-        CW_USEDEFAULT, /* y */
-        WindowWidth, /* width */
-        WindowHeight, /* height */
-        0,0,hInstance,0);
-    
-    ShowWindow(hwnd,nCmdShow);
-    UpdateWindow(hwnd);
-    
-    if(hwnd == 0)
-    {
-        MessageBox(0,"Window Creation Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
-        return 0;
-    }
-
-    while(GetMessage(&msg,0,0,0))
-    {
-        TranslateMessage(&msg); /* Translate key codes to chars if present */
-        DispatchMessage(&msg); /* Send it to WndProc */
-    }
-    
-    for (int i = 0; i < Width;i++)
-    {
-        delete [] ::Map[i];
-    }
-    delete [] ::Map;
+    	PlayAgain = false;
+	    EditHwnd = CreateWindowEx(0,"GETNUM",TEXT("请输入数据:"),WS_VISIBLE|WS_OVERLAPPEDWINDOW,
+	        CW_USEDEFAULT, /* x */
+	        CW_USEDEFAULT, /* y */
+	        600, /* width */
+	        600, /* height */
+	        0,0,0,0);
+	        
+	    if(EditHwnd == 0)
+	    {
+	        MessageBox(0,"Window Creation Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
+	        return 0;
+	    }
+	    
+	    while(GetMessage(&msg,0,0,0))
+	    {
+	        TranslateMessage(&msg); /* Translate key codes to chars if present */
+	        DispatchMessage(&msg); /* Send it to WndProc */
+	    }
+	    
+	    if(!IsEnter)
+	    {
+	        return msg.wParam;
+	    }
+	
+	    ::Map = new COLORREF*[Width];
+	    for(int i = 0;i < Width;i++)
+	    {
+	        ::Map[i] = new COLORREF[Height];
+	    }
+	    
+	    SetColor();
+	    
+	    hwnd = CreateWindowEx(WS_EX_CLIENTEDGE,szAppName,TEXT("魔方墙找茬器"),WS_OVERLAPPEDWINDOW,
+	        CW_USEDEFAULT, /* x */
+	        CW_USEDEFAULT, /* y */
+	        WindowWidth, /* width */
+	        WindowHeight, /* height */
+	        0,0,hInstance,0);
+	    
+	    ShowWindow(hwnd,nCmdShow);
+	    UpdateWindow(hwnd);
+	    
+	    if(hwnd == 0)
+	    {
+	        MessageBox(0,"Window Creation Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
+	        return 0;
+	    }
+	
+	    while(GetMessage(&msg,0,0,0))
+	    {
+	        TranslateMessage(&msg); /* Translate key codes to chars if present */
+	        DispatchMessage(&msg); /* Send it to WndProc */
+	    }
+	    
+	    for (int i = 0; i < Width;i++)
+	    {
+	        delete [] ::Map[i];
+	    }
+	    delete [] ::Map;
+	}
     
     return msg.wParam;
 }
@@ -172,7 +176,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
                 delete [] Different;
                 delete [] TmpRgb;
                 MessageBox(hwnd,szBuffer,TEXT("提示"),MB_OK);
-                DestroyWindow(hwnd);
+                SendMessage(hwnd,WM_CLOSE,0,0);
             }
             break;
         }
@@ -321,6 +325,10 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
         
         case WM_DESTROY:
         {
+        	if(MessageBox(0,TEXT("是否想要继续挑战?"),TEXT("提示"),MB_YESNO) == IDYES)
+            {
+            	PlayAgain = true; 
+			}
             PostQuitMessage(0);
             DeleteObject(BlackBrush);
             break;
@@ -405,7 +413,7 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
                 
                 if(::DiffNum <= 0 || ::DiffNum > ::Width*::Height || ::Width <= 0 || ::Height <= 0 || WindowWidth/2/::Width == 0 || WindowHeight/::Height == 0)
                 {
-                    MessageBox(hwnd,TEXT("输入有误，请检查后重新输入:"),TEXT("提示:"),MB_OK);
+                    MessageBox(hwnd,TEXT("输入有误，请检查后重新输入:\n1.大小超出正常范围.\n2.有未输入的数据.\n"),TEXT("提示:"),MB_OK);
                     SendMessage(EditHeight,WM_SETTEXT,0,(LPARAM)("请重新输入高度:"));
                     SendMessage(EditWidth,WM_SETTEXT,0,(LPARAM)("请重新输入宽度:"));
                     SendMessage(EditDiffNum,WM_SETTEXT,0,(LPARAM)("请重新输入个数:"));
