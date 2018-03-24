@@ -17,7 +17,7 @@ const int WindowWidth = GetSystemMetrics(SM_CXSCREEN);
 const int WindowHeight = GetSystemMetrics(SM_CYSCREEN);
 const int BrushWidth = 2; 
 const char* szAppName = TEXT("Rubiks's cube Wall");
-const HBRUSH BlackBrush = CreateSolidBrush(RGB(0,0,0));
+HBRUSH BlackBrush;
 bool PlayAgain = true;
 bool IsEnter = false; //玩家是否正常地输入了各类信息. 
 bool IsBorder = false;//玩家是否选中绘制边框. 
@@ -79,6 +79,7 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
     
     while(PlayAgain == true)
     {
+    	BlackBrush = CreateSolidBrush(RGB(0,0,0)); 
     	PlayAgain = false;
 	    EditHwnd = CreateWindowEx(0,"GETNUM",TEXT("请输入数据:"),WS_VISIBLE|WS_OVERLAPPEDWINDOW,
 	        CW_USEDEFAULT, /* x */
