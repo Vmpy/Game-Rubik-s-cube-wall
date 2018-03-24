@@ -26,6 +26,7 @@ bool IsCubeColor = false;//玩家是否选中魔方配色.
 LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
 LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
 
+void EmptyData(void);
 void SetColor(void);
 bool IsInRect(int,int,RECT*);
 void MakeDifferent(COLORREF*,POINT*,int);
@@ -81,7 +82,7 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
     {
     	BlackBrush = CreateSolidBrush(RGB(0,0,0)); 
     	PlayAgain = false;
-	    EditHwnd = CreateWindowEx(0,"GETNUM",TEXT("请输入数据:"),WS_VISIBLE|WS_OVERLAPPEDWINDOW,
+	    EditHwnd = CreateWindowEx(0,"GETNUM",TEXT("请输入数据:"),WS_VISIBLE|WS_OVERLAPPEDWINDOW^WS_SIZEBOX,
 	        CW_USEDEFAULT, /* x */
 	        CW_USEDEFAULT, /* y */
 	        600, /* width */
@@ -213,7 +214,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
                 switch(LOWORD(wParam))
                 {
                     case IDM_HELP:MessageBox(hwnd,TEXT("点击屏幕右侧不同的方块进行游戏."),TEXT("帮助"),MB_ICONINFORMATION);break; 
-                    case IDM_RESTART:/*TODO:添加重新开始游戏的代码.*/break;
+                    case IDM_RESTART:EmptyData();SendMessage(hwnd,WM_CLOSE,0,0);break;
                     case IDM_ABOUT:MessageBox(hwnd,TEXT("魔方墙找茬器,用于训练3D眼.\n\n作者:Vmpy \nGithub:www.github.com/vmpy"),TEXT("帮助"),MB_ICONINFORMATION);break; 
                 }
             }
@@ -328,7 +329,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
         
         case WM_DESTROY:
         {
-        	if(MessageBox(0,TEXT("是否想要继续挑战?"),TEXT("提示"),MB_YESNO) == IDYES)
+        	if(MessageBox(0,TEXT("是否继续挑战?"),TEXT("提示"),MB_YESNO) == IDYES)
             {
             	PlayAgain = true; 
 			}
@@ -551,4 +552,11 @@ void MakeDifferent(COLORREF* TmpRgb,POINT* Point,int i)
             }while(TmpRgb[index] == ::Map[Point[index].x][Point[index].y]);
         }
     }
+}
+
+void EmptyData(void)
+{
+	IsEnter = false; //玩家是否正常地输入了各类信息. 
+	IsBorder = false;//玩家是否选中绘制边框. 
+	IsCubeColor = false;//玩家是否选中魔方配色. 
 }
