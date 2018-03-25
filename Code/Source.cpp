@@ -1,7 +1,6 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <string>
-#include <sstream>
 #include <cstdlib>
 #include <ctime>
 #include "resource.h" 
@@ -405,15 +404,9 @@ LRESULT CALLBACK EditWndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam)
                 std::string Tmpx = Width;
                 std::string Tmpy = Height;
                 std::string TmpNum = DiffNum;
-                std::stringstream Tmp;
-                std::stringstream Tmp2;
-                std::stringstream Tmp3;
-                Tmp << Tmpx;
-                Tmp >> ::Width;
-                Tmp2 << Tmpy;
-                Tmp2 >> ::Height;
-                Tmp3 << TmpNum;
-                Tmp3 >> ::DiffNum;
+                ::Width = std::stoi(Tmpx);
+                ::Height = std::stoi(Tmpy);
+                ::DiffNum = std::stoi(TmpNum);
                 
                 if(::DiffNum <= 0 || ::DiffNum > ::Width*::Height || ::Width <= 0 || ::Height <= 0 || WindowWidth/2/::Width == 0 || WindowHeight/::Height == 0)
                 {
