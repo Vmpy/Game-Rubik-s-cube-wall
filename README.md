@@ -1,2 +1,2 @@
 # Rubik-s-cube-Wall
-魔方墙找茬器，3D眼训练程序.
+Windows标准库实现魔方墙找茬游戏。
