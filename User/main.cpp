@@ -27,7 +27,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT Message,WPARAM wParam,LPARAM lParam);
 
 void EmptyData(void);
 void SetColor(void);
-bool IsInRect(int,int,RECT*);
+bool IsInRect(int，int,RECT*);
 void MakeDifferent(COLORREF*,POINT*,int);
 COLORREF **Map;
 
